@@ -32,7 +32,6 @@ const STAGE2_ACK: u8 = 0x5a;
 const STAGE2_DEVICE_ACK: u8 = 0xa7;
 
 mod err;
-mod test;
 
 #[derive(Parser)]
 struct Cli {
