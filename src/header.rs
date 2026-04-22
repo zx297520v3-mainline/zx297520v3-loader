@@ -9,7 +9,10 @@ const MAGIC: [u8; 8] = [b'Z', b'X', b'7', b'5', b'2', b'1', b'V', b'1'];
 #[derive(Debug, Immutable, KnownLayout, TryFromBytes, IntoBytes, PartialEq, Serialize, Deserialize)]
 #[repr(C)]
 pub struct Header {
-    unk: u32,
+    unk: u8,
+    unk1: u8,
+    usbdl: u8,
+    timeout_multiplier: u8,
     magic: [u8; 8],
     pub data_size: u32,
     #[serde(with = "serde_byte_array")]
@@ -17,8 +20,11 @@ pub struct Header {
     #[serde(with = "serde_byte_array")]
     rsa_pub_n: [u8; 128],
     #[serde(with = "serde_byte_array")]
-    hash_y: [u8; 128],
-    unk1: u32,
+    reserved: [u8; 112],
+    #[serde(with = "serde_byte_array")]
+    hash: [u8; 16],
+    unk2: u16,
+    unk3: u16,
     stack: u32,
     pub entry: u32,
     panic: u32,
@@ -46,13 +52,18 @@ impl Header {
 impl Default for Header {
     fn default() -> Self {
         Self {
-            unk: 0x08,
+            unk: 8,
+            unk1: 0,
+            usbdl: 0x5a,
+            timeout_multiplier: 0,
             magic: MAGIC,
             data_size: 0,
             rsa_pub_e: [0; 128],
             rsa_pub_n: [0; 128],
-            hash_y: [0; 128],
-            unk1: 0,
+            reserved: [0; 112],
+            hash: [0; 16],
+            unk2: 0,
+            unk3: 0,
             stack: 0x8a000,
             entry: 0,
             panic: 0,
@@ -68,10 +79,11 @@ impl Default for Header {
 
 impl Display for Header {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "USB download enabled: {}", if self.usbdl == 0x5a { "yes" } else { "no" })?;
         writeln!(f, "Data size: {:#x}", self.data_size)?;
         writeln!(f, "RSA pubkey exponent: {:02x?}", self.rsa_pub_e)?;
         writeln!(f, "RSA pubkey modulus: {:02x?}", self.rsa_pub_n)?;
-        writeln!(f, "Hash: {:02x?}", self.hash_y)?;
+        writeln!(f, "Hash: {:02x?}", self.hash)?;
         writeln!(f, "Stack ptr: {:#x}", self.stack)?;
         writeln!(f, "Entrypoint: {:#x}", self.entry & !1)?;
         writeln!(f, "BSS start: {:#x}", self.bss_start)?;
