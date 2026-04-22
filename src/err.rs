@@ -9,12 +9,26 @@ pub enum Error {
     StageNotAccepted,
     #[error("Device didn't accept jump data :(")]
     JumpNotAccepted,
+
     // USB
     #[error("{0}")]
     NUsb(#[from] nusb::Error),
+
     // IO
     #[error("I/O: {0}")]
     Io(#[from] std::io::Error),
     #[error("Port: {0}")]
     Port(#[from] simpleport::err::Error),
+
+    // Binary data
+    #[error("De/serialize error")]
+    Zerocopy,
+    #[error("Invalid header magic: {0:#04x?}")]
+    InvalidHeaderMagic([u8; 8]),
+    #[error("Header file has invalid format: {0}")]
+    InvalidHeaderFormat(#[from] ron::de::SpannedError),
+    #[error("Bad header data {0}")]
+    HeaderWrite(#[from] ron::Error),
 }
+
+pub type Result<T> = core::result::Result<T, Error>;

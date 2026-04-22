@@ -8,14 +8,14 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::Duration;
+use zerocopy::IntoBytes;
+use zx297520v3_loader::STAGE1_BASE;
+use zx297520v3_loader::err::{Error, Result};
+use zx297520v3_loader::header::Header;
 
-use crate::err::Error;
-
-type Result<T> = core::result::Result<T, Error>;
 type EpIn = EndpointRead<Bulk>;
 type EpOut = EndpointWrite<Bulk>;
 
-const STAGE1_BASE: u32 = 0x00082000;
 const STAGE2_BASE: u32 = 0x27ef0000;
 
 const ACK: u8 = 0x5a;
@@ -30,8 +30,6 @@ const JUMP_ACCEPTED: u8 = 0xa8;
 
 const STAGE2_ACK: u8 = 0x5a;
 const STAGE2_DEVICE_ACK: u8 = 0xa7;
-
-mod err;
 
 #[derive(Parser)]
 struct Cli {
@@ -108,7 +106,23 @@ fn entry() -> Result<()> {
     println!("Device connected");
     ack(&mut reader, &mut writer)?;
 
-    let payload = fs::read(cli.stage1)?;
+    let mut payload = fs::read(cli.stage1)?;
+
+    if let Err(_) = Header::try_read(&payload) {
+        let mut header = Header::default();
+        let size = size_of::<Header>();
+        header.entry = STAGE1_BASE + size as u32 | 1;
+        header.data_size = payload.len() as u32;
+
+        payload.reserve(size as usize);
+
+        if let Err(e) = header.write_to(&mut payload[0..size as usize]).map_err(|_| Error::Zerocopy) {
+            eprintln!("Error on appending header: {e}");
+        } else {
+            println!("Appended header to the image, size: {:#x}", size);
+        }
+    }
+
     println!("Uploading stage 1");
     send_image(&mut reader, &mut writer, STAGE1_BASE, &payload, 0x2000)?;
 
