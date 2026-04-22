@@ -31,7 +31,9 @@ fn entry() -> Result<()> {
         eprintln!("Header already exists");
     } else {
         let header = if let Some(header) = cli.preset {
-            ron::from_str(&fs::read_to_string(header)?).map_err(|e| Error::InvalidHeaderFormat(e))?
+            let mut header: Header = ron::from_str(&fs::read_to_string(header)?).map_err(|e| Error::InvalidHeaderFormat(e))?;
+            header.data_size = src.len() as u32;
+            header
         } else {
             let mut header = Header::default();
             header.entry = STAGE1_BASE | 1;
