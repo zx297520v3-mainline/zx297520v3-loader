@@ -13,7 +13,7 @@ pub struct Header {
     magic: [u8; 8],
     pub data_size: u32,
     #[serde(with = "serde_byte_array")]
-    rsa_pub_d: [u8; 128],
+    rsa_pub_e: [u8; 128],
     #[serde(with = "serde_byte_array")]
     rsa_pub_n: [u8; 128],
     #[serde(with = "serde_byte_array")]
@@ -49,7 +49,7 @@ impl Default for Header {
             unk: 0x08,
             magic: MAGIC,
             data_size: 0,
-            rsa_pub_d: [0; 128],
+            rsa_pub_e: [0; 128],
             rsa_pub_n: [0; 128],
             hash_y: [0; 128],
             unk1: 0,
@@ -69,8 +69,8 @@ impl Default for Header {
 impl Display for Header {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Data size: {:#x}", self.data_size)?;
-        writeln!(f, "RSA pubkey D: {:02x?}", self.rsa_pub_d)?;
-        writeln!(f, "RSA pubkey N: {:02x?}", self.rsa_pub_n)?;
+        writeln!(f, "RSA pubkey exponent: {:02x?}", self.rsa_pub_e)?;
+        writeln!(f, "RSA pubkey modulus: {:02x?}", self.rsa_pub_n)?;
         writeln!(f, "Hash: {:02x?}", self.hash_y)?;
         writeln!(f, "Stack ptr: {:#x}", self.stack)?;
         writeln!(f, "Entrypoint: {:#x}", self.entry & !1)?;
