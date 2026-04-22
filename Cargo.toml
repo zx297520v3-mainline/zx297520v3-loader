@@ -3,11 +3,29 @@ name = "zx297520v3-loader"
 version = "0.1.0"
 edition = "2024"
 
+default-run = "loader"
+
+[[bin]]
+name = "loader"
+path = "src/main.rs"
+
+[[bin]]
+name = "mkheader"
+path = "src/mkheader.rs"
+
+[[bin]]
+name = "rmheader"
+path = "src/rmheader.rs"
+
 [dependencies]
 clap = { version = "4.5.56", features = ["derive"] }
 nusb = "0.2.1"
+ron = "0.12.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde-byte-array = "0.1.2"
 simpleport = { git = "https://github.com/rva3/simpleport", version = "0.1.0", features = ["std"] }
 thiserror = "2.0.18"
+zerocopy = { version = "0.8.48", features = ["std", "simd", "derive"] }
 
 [profile.release]
 lto = true
