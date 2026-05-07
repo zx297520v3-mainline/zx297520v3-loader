@@ -37,9 +37,9 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn try_read(src: &[u8]) -> Result<&Self> {
+    pub fn try_read(src: &[u8]) -> Result<Self> {
         // sorry.
-        let header = Self::try_ref_from_bytes(src).map_err(|_| Error::Zerocopy)?;
+        let header = Self::try_read_from_bytes(src).map_err(|_| Error::Zerocopy)?;
 
         if header.magic.as_ref() == MAGIC {
             Ok(header)

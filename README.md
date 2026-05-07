@@ -25,5 +25,14 @@ First stage has header described in src/header.rs. Size is 0x1b8 bytes. You can 
 
 The saved header data can be modified to do some fun things (stored in RON format). Note that entrypoint must NOT be masked with Thumb bit. The tool will do it automatically.
 
+## Secure boot bypass
+Run with `-e` to enable exploit to bypass secure boot on fused devices.
+
+The [exploit](https://github.com/rva3/CVE-2026-40003) is provided only for research and software freedom purposes. You may use it to boot free and open source U-Boot and the OpenWRT, to replace outdated stock firmware. You may use exploit to repair stock firmware on the device. You may NOT use exploit on devices which you don't own, or without explicit user consent. You may NOT use exploit for any malicious actions.
+
+
+## Brick tool warning
+Do not run anything from unknown sources. BootROM exploit gives full access to your device, including permanent damage.
+
 ## License
 [AGPLv3](./LICENSE)

