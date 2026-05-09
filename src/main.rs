@@ -102,6 +102,7 @@ fn joselito(r: &mut EpIn, w: &mut EpOut, addr: u32) -> Result<()> {
     }
 
     /* pop {r4, pc} goes boom */
+    println!("Set jump addr to {:#x}", addr);
     send_image(r, w, 0x81FD0, &payload, 0x2000)?;
     println!("Secure boot is disabled");
 
@@ -134,8 +135,9 @@ fn entry() -> Result<()> {
         Ok(header) => {
             if cli.exploit {
                 // we don't want header here
-                joselito(&mut reader, &mut writer, header.entry)?;
+                joselito(&mut reader, &mut writer, header.entry | 1)?;
             } else {
+                println!("{header}");
                 // bootrom expects header
             }
         }
@@ -147,15 +149,18 @@ fn entry() -> Result<()> {
                 header.entry = STAGE1_BASE + size as u32 | 1;
                 header.data_size = payload.len() as u32;
 
-                payload.reserve(size);
+                let mut payload_with_header = Vec::with_capacity(payload.len() + size);
+                payload_with_header.resize(size, 0);
 
-                if let Err(e) = header.write_to(&mut payload[0..size]).map_err(|_| Error::Zerocopy) {
+                if let Err(e) = header.write_to(&mut payload_with_header[..size]) {
                     eprintln!("Error on appending header: {e}");
                 } else {
                     println!("Appended header to the image, size: {:#x}", size);
                     println!("===============================================");
                     println!("{header}");
                     println!("===============================================");
+                    payload_with_header.extend(payload);
+                    payload = payload_with_header;
                 }
             }
         }

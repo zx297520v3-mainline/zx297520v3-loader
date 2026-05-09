@@ -25,7 +25,10 @@ struct Cli {
 
 fn entry() -> Result<()> {
     let cli = Cli::parse();
-    let mut src = fs::read(cli.input)?;
+    let src = fs::read(cli.input)?;
+
+    let size = size_of::<Header>();
+    let mut output = Vec::with_capacity(src.len() + size);
 
     if Header::try_read(&src[..size_of::<Header>()]).is_ok() {
         eprintln!("Header already exists");
@@ -36,18 +39,18 @@ fn entry() -> Result<()> {
             header
         } else {
             let mut header = Header::default();
-            header.entry = STAGE1_BASE | 1;
+            header.entry = STAGE1_BASE + size as u32 | 1;
             header.data_size = src.len() as u32;
             header
         };
 
-        let size = size_of::<Header>();
-        src.reserve(size);
-        header.write_to(&mut src[..size]).map_err(|_| Error::Zerocopy)?;
+        output.resize(size, 0);
+        header.write_to(&mut output[..size]).map_err(|_| Error::Zerocopy)?;
+        output.extend(src);
 
         println!("{header}");
 
-        fs::write(cli.output, src)?;
+        fs::write(cli.output, output)?;
     }
 
     Ok(())

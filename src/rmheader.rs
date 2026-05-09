@@ -26,7 +26,7 @@ fn entry() -> Result<()> {
         Ok(header) => {
             fs::write(cli.output, &src[size_of::<Header>()..])?;
             if let Some(preset) = cli.preset {
-                fs::write(preset, ron::ser::to_string_pretty(header, ron::ser::PrettyConfig::default())?)?;
+                fs::write(preset, ron::ser::to_string_pretty(&header, ron::ser::PrettyConfig::default())?)?;
             }
 
             println!("{header}");

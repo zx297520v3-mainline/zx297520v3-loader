@@ -85,7 +85,7 @@ impl Display for Header {
         writeln!(f, "RSA pubkey modulus: {:02x?}", self.rsa_pub_n)?;
         writeln!(f, "Hash: {:02x?}", self.hash)?;
         writeln!(f, "Stack pointer: {:#x}", self.stack)?;
-        writeln!(f, "Entrypoint: {:#x}", self.entry & !1)?;
+        writeln!(f, "Entrypoint: {:#x}", self.entry)?;
         writeln!(f, "BSS start: {:#x}", self.bss_start)?;
         write!(f, "BSS end: {:#x}", self.bss_end)
     }
